@@ -48,17 +48,19 @@ pipeline {
             steps {
                 // Build Docker image
                 script {
-                    sh 'docker context use default'
                     docker.build("${DOCKERHUB_REPO}:${DOCKER_IMAGE_TAG}")
                 }
             }
         }
         stage('Push Docker Image to Docker Hub') {
             steps {
-                // Push Docker image to Docker Hubb
                 script {
-                    docker.withRegistry('https://index.docker.io/v1/', DOCKERHUB_CREDENTIALS_ID) {
-                        docker.image("${DOCKERHUB_REPO}:${DOCKER_IMAGE_TAG}").push()
+                    withCredentials([usernamePassword(credentialsId: DOCKERHUB_CREDENTIALS_ID, usernameVariable: 'DOCKERHUB_USER', passwordVariable: 'DOCKERHUB_PASSWORD')]) {
+                        // Log in to Docker Hub
+                        sh "echo ${DOCKERHUB_PASSWORD} | docker login -u ${DOCKERHUB_USER} --password-stdin"
+
+                        // Push Docker images to Docker Hub
+                        sh "docker push ${DOCKERHUB_REPO}:${DOCKER_IMAGE_TAG}"
                     }
                 }
             }
