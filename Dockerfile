@@ -1,27 +1,18 @@
-# First stage: Build the application using Maven
-FROM --platform=linux/arm64 maven:3.8.7-eclipse-temurin-17 AS build
+# Use Maven image to build the application
+FROM maven:latest
 
-# Set working directory
+# Set working directory inside the container
 WORKDIR /app
 
-# Copy only pom.xml first (for dependency caching optimization)
+# Copy the pom.xml to download dependencies first (caching optimization)
 COPY pom.xml /app/
-RUN mvn dependency:go-offline
 
-# Copy the entire project
+# Copy the entire project to the container
 COPY . /app/
 
 # Package the application using Maven
-RUN mvn clean package
+RUN mvn package
 
-# Second stage: Use a lightweight JDK runtime for running the app
-FROM --platform=linux/arm64 eclipse-temurin:17-jre
+# Run the main class from the built JAR
+CMD ["java", "-jar", "target/tripcost.jar"]
 
-# Set working directory
-WORKDIR /app
-
-# Copy only the built JAR from the previous stage
-COPY --from=build /app/target/tripcost.jar /app/tripcost.jar
-
-# Run the application
-CMD ["java", "-jar", "/app/tripcost.jar"]
